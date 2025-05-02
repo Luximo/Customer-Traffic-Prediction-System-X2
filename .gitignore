@@ -1,0 +1,23 @@
+# Laravel backend (ctp-backend)
+ctp-backend/vendor/
+ctp-backend/node_modules/
+ctp-backend/public/build/
+ctp-backend/storage/
+ctp-backend/.env
+ctp-backend/database/*.sqlite
+ctp-backend/.idea/
+
+# Python ML (ctp-ml)
+ctp-ml/__pycache__/
+ctp-ml/venv/
+ctp-ml/*.pyc
+ctp-ml/.ipynb_checkpoints/
+ctp-ml/.env
+
+# General
+*.log
+.DS_Store
+.env
+.env.*
+*.sqlite
+*.pyc
