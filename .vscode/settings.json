@@ -1,11 +1,13 @@
 {
     "cSpell.words": [
         "endisset",
+        "endphp",
         "endpush",
         "ipynb",
         "jsonify",
         "Laravel",
         "pycache",
-        "venv"
+        "venv",
+        "wctx"
     ]
 }

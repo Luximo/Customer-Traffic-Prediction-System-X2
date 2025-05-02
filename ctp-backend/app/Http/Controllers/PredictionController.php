@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Services\PredictionService;
 use Illuminate\Support\Carbon;
+use App\Models\ManualOverride;
+
 
 class PredictionController extends Controller
 {
@@ -29,6 +31,8 @@ class PredictionController extends Controller
         $month = Carbon::parse($date)->month;
 
         // --- Hourly Predictions (existing)
+        $overridden = [];
+
         for ($hour = 8; $hour <= 21; $hour++) {
             $input = [
                 "hour" => $hour,
@@ -40,11 +44,14 @@ class PredictionController extends Controller
                 "is_promo" => $isPromo,
             ];
 
-            $prediction = $predictor->predict($input);
+            $override = ManualOverride::where('date', $date)->where('hour', $hour)->first();
+            $prediction = $override ? $override->value : $predictor->predict($input);
 
             $labels[] = date('g A', strtotime("$hour:00"));
             $values[] = $prediction;
+            $overridden[] = $override ? true : false;
         }
+
 
         // --- Weekly Trends (new)
         $weeklyLabels = [];
@@ -107,12 +114,12 @@ class PredictionController extends Controller
             'prediction' => $values[6],
             'labels' => $labels,
             'values' => $values,
+            'overridden' => $overridden,
             'weeklyLabels' => $weeklyLabels,
             'weeklyTotals' => $weeklyTotals,
             'weeklyAverages' => $weeklyAverages,
             'heatmapLabels' => $heatmapHours,
             'heatmapData' => $heatmapData,
-
         ]);
     }
 }

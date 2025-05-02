@@ -93,6 +93,63 @@
             <div class="text-3xl font-bold text-primary">{{ $prediction }}</div>
         </div>
 
+        <!-- ✍️ Manual Override Form -->
+        @if(request('date'))
+        <form method="POST" action="{{ route('overrides.store') }}"
+            class="bg-white p-4 rounded shadow mb-8 space-y-4 border border-indigo-100">
+            @csrf
+            <h3 class="text-md font-semibold text-indigo-700">✍️ Set Manual Override</h3>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <input type="hidden" name="date" value="{{ request('date') }}">
+                <div>
+                    <label for="hour" class="block text-sm font-medium">Hour</label>
+                    <select name="hour" id="hour" class="w-full rounded border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        @for ($h = 8; $h <= 21; $h++)
+                            <option value="{{ $h }}">{{ $h }}:00</option>
+                            @endfor
+                    </select>
+                </div>
+                <div>
+                    <label for="value" class="block text-sm font-medium">Customer Count</label>
+                    <input type="number" name="value" id="value" required min="0"
+                        class="w-full rounded border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <div class="flex items-end">
+                    <button type="submit"
+                        class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded shadow hover:bg-indigo-700 transition">
+                        ➕ Save Override
+                    </button>
+                </div>
+            </div>
+        </form>
+        @endif
+
+        @php
+        $overrides = \App\Models\ManualOverride::where('date', request('date'))->orderBy('hour')->get();
+        @endphp
+
+        @if ($overrides->count())
+        <div class="mt-6 bg-white p-4 rounded shadow border border-red-200">
+            <h3 class="text-sm font-semibold text-red-700 mb-3">✂️ Active Manual Overrides for {{ request('date') }}</h3>
+            <ul class="space-y-2 text-sm text-gray-800">
+                @foreach ($overrides as $o)
+                <li class="flex items-center justify-between">
+                    <span>{{ $o->hour }}:00 → {{ $o->value }} customers</span>
+                    <form method="POST" action="{{ route('overrides.destroy', $o->id) }}">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit"
+                            class="text-red-600 hover:underline text-xs font-medium">Remove</button>
+                    </form>
+                </li>
+                @endforeach
+            </ul>
+        </div>
+        @endif
+
+
+
         <!-- Hourly Chart -->
         <div class="bg-white rounded-lg shadow p-6">
             <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">🕘 Hourly Traffic</h2>
@@ -170,17 +227,28 @@
             document.addEventListener("DOMContentLoaded", function() {
                 const ctx = document.getElementById('predictionChart')?.getContext('2d');
                 if (ctx) {
+                    const labels = @json($labels);
+                    const values = @json($values);
+                    const overridden = @json($overridden);
+
+                    const pointStyles = overridden.map(flag => flag ? 'rectRot' : 'circle');
+                    const pointColors = overridden.map(flag => flag ? '#ef4444' : '#6366f1');
+
                     new Chart(ctx, {
                         type: 'line',
                         data: {
-                            labels: @json($labels),
+                            labels: labels,
                             datasets: [{
                                 label: 'Predicted Customers',
-                                data: @json($values),
+                                data: values,
                                 borderColor: '#6366f1',
                                 backgroundColor: 'rgba(99, 102, 241, 0.1)',
                                 fill: true,
-                                tension: 0.4
+                                tension: 0.4,
+                                pointStyle: pointStyles,
+                                pointBackgroundColor: pointColors,
+                                pointRadius: 5,
+                                pointHoverRadius: 7
                             }]
                         },
                         options: {
@@ -188,6 +256,16 @@
                             plugins: {
                                 legend: {
                                     position: 'top'
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(ctx) {
+                                            const index = ctx.dataIndex;
+                                            const value = ctx.raw;
+                                            const flag = overridden[index] ? ' ✍️ (Manual Override)' : '';
+                                            return ` ${value} customers${flag}`;
+                                        }
+                                    }
                                 }
                             },
                             scales: {
@@ -209,6 +287,7 @@
                     });
                 }
 
+                // Weekly Chart (unchanged)
                 const wctx = document.getElementById('weeklyChart')?.getContext('2d');
                 if (wctx) {
                     new Chart(wctx, {
@@ -260,6 +339,7 @@
                 }
             });
         </script>
+
     </div>
 </body>
 
