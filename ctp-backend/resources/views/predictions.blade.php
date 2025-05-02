@@ -27,6 +27,13 @@
 <body class="bg-gray-50 text-gray-800 font-sans antialiased leading-relaxed">
     <div class="max-w-6xl mx-auto py-10 px-6 space-y-10">
 
+        @if(session('status'))
+        <div class="mb-4 p-4 rounded-md bg-green-100 text-green-800 text-sm shadow">
+            ✅ {{ session('status') }}
+        </div>
+        @endif
+
+
         <!-- Title -->
         <h1 class="text-3xl font-bold flex items-center gap-2">
             📊 Customer Traffic Predictions
@@ -140,13 +147,44 @@
                         @csrf
                         @method('DELETE')
                         <button type="submit"
-                            class="text-red-600 hover:underline text-xs font-medium">Remove</button>
+                            onclick="return confirm('Are you sure you want to remove this manual override?')"
+                            class="text-red-600 hover:underline text-xs font-medium">
+                            Remove
+                        </button>
+
                     </form>
                 </li>
                 @endforeach
             </ul>
         </div>
         @endif
+
+        <!-- CSV Upload Form -->
+        <form action="{{ route('csv.import') }}" method="POST" enctype="multipart/form-data"
+            class="bg-white p-4 rounded shadow border border-gray-200 mt-6 space-y-4">
+            @csrf
+            <h3 class="text-md font-semibold text-indigo-700">📥 Upload Traffic Data (CSV)</h3>
+
+            <div class="flex items-center gap-4">
+                <input type="file" name="csv_file" accept=".csv"
+                    class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:border-0
+                   file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" required>
+
+                <button type="submit"
+                    class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded shadow hover:bg-indigo-700 transition">
+                    ⬆️ Upload CSV
+                </button>
+            </div>
+
+            @if(session('upload_success'))
+            <p class="text-green-600 text-sm">{{ session('upload_success') }}</p>
+            @endif
+
+            @if($errors->any())
+            <p class="text-red-600 text-sm">{{ $errors->first() }}</p>
+            @endif
+        </form>
+
 
 
 
