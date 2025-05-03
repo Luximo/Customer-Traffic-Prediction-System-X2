@@ -7,6 +7,7 @@ use App\Http\Controllers\PredictionController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\OverrideController;
 use App\Http\Controllers\CsvImportController;
+use App\Http\Controllers\TrafficDataController;
 
 
 Route::get('/', function () {
@@ -27,6 +28,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/overrides', [OverrideController::class, 'store'])->name('overrides.store');
     Route::delete('/overrides/{id}', [OverrideController::class, 'destroy'])->name('overrides.destroy');
     Route::post('/predictions/import', [CsvImportController::class, 'import'])->name('csv.import');
+    Route::get('/traffic-data', [TrafficDataController::class, 'index'])->name('traffic.index');
 });
 
 require __DIR__ . '/auth.php';

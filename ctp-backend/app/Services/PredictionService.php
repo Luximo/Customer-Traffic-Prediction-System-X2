@@ -1,21 +1,43 @@
 <?php
 
+// app/Services/PredictionService.php
+
 namespace App\Services;
 
-use Illuminate\Support\Facades\Http;
+use App\Models\TrafficData;
 
 class PredictionService
 {
-    protected $flaskBaseUrl = 'http://127.0.0.1:5000';
-
-    public function predict(array $data): ?int
+    public function predict(array $input): int
     {
-        $response = Http::post("{$this->flaskBaseUrl}/predict", $data);
+        // Extract input
+        $hour = $input['hour'];
+        $weekday = $input['weekday'] ?? now()->dayOfWeek;
+        $month = $input['month'] ?? now()->month;
 
-        if ($response->successful()) {
-            return $response->json()['predicted_customer_count'];
-        }
+        // --- 1. Lookup historical average for this hour + weekday
+        $historicalAverage = TrafficData::query()
+            ->where('hour', $hour)
+            ->whereRaw("strftime('%w', date) = ?", [$weekday])
+            ->avg('customer_count');
 
-        return null;
+        // --- 2. Fallback if no data found
+        $historicalAverage = $historicalAverage ?? 0;
+
+        // --- 3. Generate synthetic prediction
+        $base = 20 + ($input['is_promo'] ?? 0) * 10;
+
+        $synthetic = $base
+            + rand(0, 10)
+            + (($input['condition'] ?? 0) * 2)
+            + ($hour >= 11 && $hour <= 13 ? 15 : 0)
+            + ($hour >= 17 && $hour <= 19 ? 10 : 0);
+
+        // --- 4. Combine: Weighted blend (e.g., 70% synthetic, 30% historical)
+        $final = $historicalAverage > 0
+            ? round(($synthetic * 0.7) + ($historicalAverage * 0.3))
+            : round($synthetic);
+
+        return max(0, (int) $final);
     }
 }

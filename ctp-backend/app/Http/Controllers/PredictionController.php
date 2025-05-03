@@ -7,7 +7,6 @@ use App\Services\PredictionService;
 use Illuminate\Support\Carbon;
 use App\Models\ManualOverride;
 
-
 class PredictionController extends Controller
 {
     protected $predictor;
@@ -21,18 +20,23 @@ class PredictionController extends Controller
     {
         $labels = [];
         $values = [];
+        $overridden = [];
 
-        // Inputs
+        // Get and validate the date
         $date = $request->input('date', now()->toDateString());
+        try {
+            $parsedDate = Carbon::parse($date);
+        } catch (\Carbon\Exceptions\InvalidFormatException $e) {
+            return redirect()->back()->withErrors(['date' => 'Invalid date format. Please use MM/DD/YY or YYYY-MM-DD.']);
+        }
+
         $condition = (int) $request->input('condition', 0);
         $isPromo = (int) $request->input('is_promo', 1);
 
-        $weekday = Carbon::parse($date)->dayOfWeek;
-        $month = Carbon::parse($date)->month;
+        $weekday = $parsedDate->dayOfWeek;
+        $month = $parsedDate->month;
 
         // --- Hourly Predictions (existing)
-        $overridden = [];
-
         for ($hour = 8; $hour <= 21; $hour++) {
             $input = [
                 "hour" => $hour,
@@ -44,7 +48,7 @@ class PredictionController extends Controller
                 "is_promo" => $isPromo,
             ];
 
-            $override = ManualOverride::where('date', $date)->where('hour', $hour)->first();
+            $override = ManualOverride::where('date', $parsedDate->toDateString())->where('hour', $hour)->first();
             $prediction = $override ? $override->value : $predictor->predict($input);
 
             $labels[] = date('g A', strtotime("$hour:00"));
@@ -52,14 +56,13 @@ class PredictionController extends Controller
             $overridden[] = $override ? true : false;
         }
 
-
         // --- Weekly Trends (new)
         $weeklyLabels = [];
         $weeklyTotals = [];
         $weeklyAverages = [];
 
         for ($i = 0; $i < 7; $i++) {
-            $day = Carbon::parse($date)->addDays($i);
+            $day = $parsedDate->copy()->addDays($i);
             $dayWeekday = $day->dayOfWeek;
             $dayMonth = $day->month;
 
@@ -108,7 +111,6 @@ class PredictionController extends Controller
 
             $heatmapData[$dayName] = $dayPredictions;
         }
-
 
         return view('predictions', [
             'prediction' => $values[6],

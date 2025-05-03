@@ -1,8 +1,11 @@
 {
     "cSpell.words": [
+        "endforelse",
         "endisset",
         "endphp",
         "endpush",
+        "endsection",
+        "forelse",
         "ipynb",
         "jsonify",
         "Laravel",
