@@ -6,6 +6,8 @@ ctp-backend/storage/
 ctp-backend/.env
 ctp-backend/database/*.sqlite
 ctp-backend/.idea/
+/ctp-backend/public/traffic_data.csv
+/ctp-ml/extra_traffic_data.csv
 
 # Python ML (ctp-ml)
 ctp-ml/__pycache__/
